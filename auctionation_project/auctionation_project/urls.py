@@ -15,7 +15,34 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from app_auctionation.views import LandingView, ItemStatsView
+from api_auctionation.views import APIAuctionsView, APIItemStatsView, APIGetIconView, APIItemView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path(
+        '',
+        LandingView.as_view(),
+        name='first'
+    ),
+    path(
+        'api/auctions/<int:realm>/<str:faction>/<slug:slug>/',
+        APIAuctionsView.as_view()
+    ),
+    path(
+        'api/item_stats/<int:realm>/<str:faction>/<int:item_id>/',
+        APIItemStatsView.as_view()
+    ),
+    path(
+        'api/icon/<int:item_id>/',
+        APIGetIconView.as_view()
+    ),
+    path(
+        'api/item/<int:wow_id>/',
+        APIItemView.as_view()
+    ),
+    path(
+        '/item/<int:realm>/<str:faction>/<int:item_id>/',
+        ItemStatsView.as_view()
+    )
 ]
