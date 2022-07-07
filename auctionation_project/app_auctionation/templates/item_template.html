@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ item.name }}, {{ realm.name }} {{ faction_name }}</title>
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="/static/styles.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.8.0/chart.min.js" integrity="sha512-sW/w8s4RWTdFFSduOTGtk4isV1+190E/GghVffMA9XczdJ2MDzSzLEubKAs5h0wzgSJOQTRYyaz73L3d6RtJSg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    </head>
+<body>
+    <div class='div'>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-7">
+                    <header><h1><a href="http://localhost:8000/">Auctionation</a></h1></header>
+
+                    <h4>World of Warcraft Classic live auction house statistics </h4>
+                    <p id="realmId" hidden>{{ realm.id }}</p>
+                    <p id="faction" hidden>{{ faction }}</p>
+                    <p id="itemId" hidden>{{ item.id }}</p>
+                    <p class = text-secondary>Last database update: {{ data_time }}</p>
+                    <h3>Item:</h3>
+                    <div class="container">
+                        <h2 class="item" id="{{ item.quality }}"><img src="http://localhost:8000/api/icon/{{ item.wow_id }}/" alt="" id="itemIcon">{{ item.name }}</h2>
+                        {% if user.is_authenticated %}
+                            <form method="POST">
+                                {% csrf_token %}
+                            {% if observed %}
+                            <input type="text" value="{{ observed }}" hidden name="observed">
+                            <p>You observe this item</p>
+                            <button class="btn btn-warning" type="submit">Stop observing</button>
+                            {% else %}
+                            <input type="text" value="False" hidden name="observed">
+                            <button class="btn btn-outline-warning" type="submit">Observe</button>
+                            {% endif %}
+                            </form>
+                        {% else %}
+                            <p>Login or create account to add this item to your Observed list.</p>
+                        {% endif %}
+                        
+                    </div>
+                    
+                </div>
+                {% if user.is_authenticated %}
+                <div class="col-sm-5">
+                    <div>
+                        <p>Hello, {{ user }}</p>
+                    </div>
+                    <a href="/logout/?next={{ request.path }}">
+                        <button class="btn btn-warning">Logout</button>
+                    </a>
+                </div>
+                {% else %}
+                <div class="col-sm-5">
+                    <p>You are currently not logged in.</p>
+
+                    <a href="/login/?next={{ request.path }}">
+                        <button class="btn btn-warning">Login</button>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="container">
+            <h4>Data for {{ realm.name }}, {{ faction_name }} side</h4>
+            <div class="row">
+                <div class="col-sm-6">
+                    <h5>Auctions count</h5>
+                    <canvas id="auctions_count"></canvas>
+                </div>
+                <div class="col-sm-6">
+                    <h5>Lowest buyout</h5>
+                    <canvas id="lowest_buyout"></canvas>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <h5>Mean buyout</h5>
+                    <canvas id="mean_buyout"></canvas>
+                </div>
+                <div class="col-sm-6">
+                    <h5>Median buyout</h5>
+                    <canvas id="median_buyout"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <h4>Comments</h4>
+            <table class="table">
+                {% if user.is_authenticated %}
+                <form method="POST" action="/comment/{{ realm.id }}/{{ faction }}/{{ item.wow_id }}/?next={{ request.path }}">
+                    {% csrf_token %}
+                    <tr>
+                        <td>{{ now }}</td>
+                        <td>
+                            <textarea class="form-control" name="content" id="" cols="50" rows="3"></textarea>
+                        </td>
+                        <td>
+                                <button type="submit" class="btn btn-outline-warning">Add comment</button>
+                        </td>
+                    </tr>
+                </form>
+                {% else %}
+                    <tr>
+                        <td>Login or create an account to post comment</td>
+                    </tr>
+                {% endif %}
+                {% for comment in comments %}
+                <tr>
+                    <td>{{ comment.created }}</td>
+                    <td>{{ comment.user.username }}</td>
+                    <td>{{ comment.content }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        
+    </div>
+    <script src="{% static 'app_item.js' %}" type="module"></script>
+</body>
+</html>

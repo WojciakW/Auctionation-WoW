@@ -6,32 +6,89 @@
     <title>Auctionation</title>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/styles.css">
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div class="container">
+    <div class='bg-image'>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-7">
+                    <header><h1><a href="http://localhost:8000/">Auctionation</a></h1></header>
+                    <h4>World of Warcraft Classic live auction house statistics </h4>
+                    <p class = text-secondary>Last database update: {{ data_time }}</p>
+                    
+                        <form id="search" method="POST">
+                            <div class="form-group">
+                            {% csrf_token %}
+                            <label for="search"></label>
+                            <input type="text" id="search" placeholder="Search for auctions or item..." name="search_input" class="form-control">
+                            <label for="select_realm">Realm: </label>
+                            <select name="select_realm" id='select_realm'>
+                                {% for realm in realms %}
+                                <option value="{{ realm.id }}">{{ realm.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="select_faction">Faction: </label>
+                            <select name="select_faction" id='select_faction' class="form-select">
+                                <option value="h">Horde</option>
+                                <option value="a">Alliance</option>
+                            </select>
+                            <button type="submit" id="search_button" class="btn btn-warning">Go!</button>
+                            </div>
+                        </form>
+                    
+                </div>
+                {% if user.is_authenticated %}
+                <div class="col-sm-5">
+                    <div>
+                        <p>Hello, {{ user }}</p>
+                    </div>
+                    <a href="/logout/?next={{ request.path }}">
+                        <button class="btn btn-outline-warning">Logout</button>
+                    </a>
+                </div>
+                {% else %}
+                <div class="col-sm-5">
+                    <p>You are currently not logged in.</p>
 
-        <header><h1>Auctionation</h1></header>
+                    <a href="/login/?next={{ request.path }}">
+                        <button class="btn btn-outline-warning">Login</button>
+                    </a>
+                </div>
+                {% endif %}
 
-        <h4>World of Warcraft Classic live auction house statistics </h4>
-        <form id="search" method="POST">
-            {% csrf_token %}
-            <label for="search"></label>
-            <input type="text" id="search" placeholder="Search for auctions or item..." name="search_input">
-            <select name="select_realm" id='select_realm'>
-                {% for realm in realms %}
-                <option value="{{ realm.id }}">{{ realm.name }}</option>
+                
+            </div>
+
+        </div>
+        <div class="container">
+            {% if user.is_authenticated %}
+            <h4 class="obs">Your observed items: </h4>
+                <table class="table">
+                <tr>
+                    <th></th>
+                    <th>Item</th>
+                    <th>Realm</th>
+                    <th>Faction</th>
+                </tr>   
+                {% for item in user_observed_items %}
+                <tr>
+                    <td><img src="http://localhost:8000/api/icon/{{ item.item.wow_id }}" alt="" id="observed"></td>
+                    <td>{{ item.item.name}}</td>
+                    <td>{{ item.realm.name }}</td>
+                    <td>{{ item.faction_name }}</td>
+                    <td>
+                        <a href="/item/{{ item.realm_id }}/{{ item.faction }}/{{ item.item.wow_id }}"><button class="btn btn-success">View</button></a>
+                    </td>
+                </tr>
                 {% endfor %}
-            </select>
-            <select name="select_faction" id='select_faction'>
-                <option value="h">Horde</option>
-                <option value="a">Alliance</option>
-            </select>
-            <button type="submit" id="search_button">Go!</button>
-        </form>
+                </table>
+            {% endif %}
+        </div>
     </div>
     <script src="{% static 'app.js' %}"></script>
 </body>
