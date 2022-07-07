@@ -11,17 +11,93 @@ function getPrice(val) {
 
     g = rem2
 
-    // for (const item of result){
-    //     if (item === 0){
-    //         result.splice(result.indexOf(item), 1)
-    //     }
-    // }
-
     return [g, s, b]
 
 }
 
-function getData(url) {
+function getItem(url, realm=null, faction=null) {
+    fetch(
+        url,
+    ).then(
+        function (resp) {
+            return resp.json()
+        }
+    ).then(
+        function (data) {
+            const h5 = document.createElement('h5')
+            h5.innerText = 'Items found:'
+            h5.className = 'foundInfo'
+
+            document.querySelector('.container').appendChild(h5)
+
+            const itemTable = document.createElement('table')
+            itemTable.className = 'table'
+            document.querySelector('.container').appendChild(itemTable)
+
+            const tr = document.createElement('tr')
+
+            if (data.length === 0) {
+                tr.innerText = 'No items found matching given query.'    
+                itemTable.appendChild(tr)
+
+            } else {
+                for (element of data){
+                    const tr = document.createElement('tr')
+                    const id = element.wow_id
+                
+                    const img_td = document.createElement('td')
+                    const img = document.createElement('img')
+                    img.setAttribute('src', `http://localhost:8000/api/icon/${id}/`)
+
+                    img_td.appendChild(img)
+                    tr.appendChild(img_td)
+
+                    const name_td = document.createElement('td')
+                    name_td.innerText = element.name
+
+                    const itemLink = document.createElement('a')
+                    itemLink.setAttribute('href', `http://localhost:8000/item/${realm}/${faction}/${id}/`)
+
+                    const itemLinkButton = document.createElement('button')
+                    itemLinkButton.className = 'btn btn-warning'
+                    itemLinkButton.innerText = 'View'
+                    
+                    itemLink.appendChild(itemLinkButton)
+
+                    const link_td = document.createElement('td')
+                    link_td.appendChild(itemLink)
+
+                    const item_quality = element.quality
+
+                    switch (item_quality) {
+                        case 'Common':
+                            name_td.style.color = 'white'
+                            break;
+
+                        case 'Uncommon':
+                            name_td.style.color = '#1eff00'
+                            break;
+                        
+                        case 'Rare':
+                            name_td.style.color = '#0070dd'
+                            break;
+                        
+                        case 'Epic':
+                            name_td.style.color = '#a335ee'
+                            break;
+                    
+                    }
+
+                    tr.appendChild(name_td)
+                    tr.appendChild(link_td)
+                    itemTable.appendChild(tr)
+                }
+            }
+        }
+    )
+}
+
+function getAuctionsData(url) {
     fetch(
         url, 
         {
@@ -41,7 +117,34 @@ function getData(url) {
 
             const table = document.createElement('table')
 
+            const h5 = document.createElement('h5')
+            h5.innerText = `Current auctions on chosen realm, side: `
+            h5.className = 'foundInfo'
+
+            document.querySelector('.container').appendChild(h5)
+
             table.className = "table"
+
+            const tableHeader = document.createElement('tr')
+
+            let tableHeaderData = document.createElement('th')
+            tableHeaderData.innerText = ''
+            tableHeader.appendChild(tableHeaderData)
+
+            tableHeaderData = document.createElement('th')
+            tableHeaderData.innerText = 'Name'
+            tableHeader.appendChild(tableHeaderData)
+
+            tableHeaderData = document.createElement('th')
+            tableHeaderData.innerText = 'Quantity'
+            tableHeader.appendChild(tableHeaderData)
+
+            tableHeaderData = document.createElement('th')
+            tableHeaderData.innerText = 'Buyout (g, s, b)'
+            tableHeader.appendChild(tableHeaderData)
+
+            table.appendChild(tableHeader)
+
             for (data_element of data){
                 const id = data_element.wow_item_id
                 const buyout = data_element.buyout
@@ -73,16 +176,24 @@ function getData(url) {
                         const item_quality = data.quality
 
                         switch (item_quality) {
+                            case 'Poor':
+                                quality_td.style.color = '#9d9d9d'
+                                break;
+
+                            case 'Common':
+                                quality_td.style.color = 'white'
+                                break;
+
                             case 'Uncommon':
-                                quality_td.style.color = 'green'
+                                quality_td.style.color = '#1eff00'
                                 break;
                             
                             case 'Rare':
-                                quality_td.style.color = 'blue'
+                                quality_td.style.color = '#0070dd'
                                 break;
                             
                             case 'Epic':
-                                quality_td.style.color = 'purple'
+                                quality_td.style.color = '#a335ee'
                                 break;
                 
                         }
@@ -101,7 +212,7 @@ function getData(url) {
                 )
             }
 
-            document.querySelector('body').appendChild(table)
+            document.querySelector('.container').appendChild(table)
 
         }
     )
@@ -112,8 +223,20 @@ const searchForm = document.querySelector('#search')
 document.querySelector('#search_button').addEventListener('click', function(e){
     e.preventDefault()
 
+    if (document.querySelector('.foundInfo')) {
+        for (const h5 of document.querySelectorAll('.foundInfo')){
+            h5.remove()
+        }
+    }
+
     if (document.querySelector('table')){
-        document.querySelector('table').remove()
+        for (const table of document.querySelectorAll('table')){
+            table.remove()
+        }
+    }
+
+    if (document.querySelector('.obs')){
+        document.querySelector('.obs').remove()
     }
     
     const itemQuery = searchForm.elements['search_input'].value
@@ -124,66 +247,6 @@ document.querySelector('#search_button').addEventListener('click', function(e){
     const faction = document.querySelector('#select_faction')
     const chosen_faction = faction.options[faction.selectedIndex].value
 
-    return getData(`http://localhost:8000/api/auctions/${chosen_realm}/${chosen_faction}/${itemQuery}/`)
+    getItem(`http://localhost:8000/api/item/${itemQuery}/`, chosen_realm, chosen_faction)
+    getAuctionsData(`http://localhost:8000/api/auctions/${chosen_realm}/${chosen_faction}/${itemQuery}/`)
 })
-
-
-// for (element of document.querySelectorAll('.db-item')) {
-//     fetch(
-//         `https://us.api.blizzard.com/data/wow/item/${element.id}?namespace=static-classic-us&locale=en_US&access_token=USHPrxtIW9KtEcG9gGPgZTBM0yKY4WKeS7`
-//     ).then(
-//         function (resp) {
-//             return resp.json()
-//         }
-//     ).then(
-//         function (data) {
-//             // console.log(data.id, data.name)
-//             for (const el of document.querySelectorAll(`[id="${data.id}"]`)) {
-//                 el.querySelector('span').innerText = data.name
-//             }
-//         }
-//     )
-// }
-
-// for (element of document.querySelectorAll('.db-item')) {
-//     fetch(
-//         `https://us.api.blizzard.com/data/wow/media/item/${element.id}?namespace=static-classic-us&locale=en_US&access_token=USHPrxtIW9KtEcG9gGPgZTBM0yKY4WKeS7`
-//     ).then(
-//         function (resp) {
-//             return resp.json()
-//         }
-//     ).then(
-//         function (data) {
-//             for (const el of document.querySelectorAll(`[id="${data.id}"]`)) {
-//                 img = el.querySelector('img')
-//                 img.setAttribute('src', data.assets[0].value)
-//             }
-//         }
-//     )
-// }
-
-// for (const element of document.querySelectorAll('.buyout')) {
-//     const elementContent = element.innerText
-//     element.innerText = getPrice(elementContent)[0] + 'g ' + getPrice(elementContent)[1] + 's ' + getPrice(elementContent)[2] + 'b'
-// }
-
-
-// document.querySelector('#search').addEventListener('submit', function(e){
-//     e.preventDefault()
-//     const search = this.elements.search.value
-//     fetch(
-//         `https://us.api.blizzard.com/data/wow/search/item?namespace=static-us&name.en_US=${search}&orderby=id&_page=1&access_token=USHPrxtIW9KtEcG9gGPgZTBM0yKY4WKeS7`
-//     ).then(
-//         function(resp){
-//             return resp.json
-//         }
-//     ).then(
-//         function(data){
-            
-//         }
-//     )
-// })
-
-// document.addEventListener('DOMContentLoaded', function(){
-//     return loadAllElements()
-// })
