@@ -1,11 +1,7 @@
-from django.http import JsonResponse, Http404, HttpResponse
-from django.shortcuts import render
-from django.core import serializers
+from django.http import HttpResponse
 from django.views import View
 
 import os
-
-import json
 
 from app_auctionation.models import (
     Auction,
@@ -44,11 +40,13 @@ class APIAuctionsView(ListAPIView):
 
 class APIItemStatsView(APIView):
     def get(self, request, faction, realm, item_id):
+
         item_data = AuctionItemArchive.objects.filter(
             item_id=item_id,
             faction=faction,
             realm_id=realm
         )
+
         print('asd')
         serializer = ItemArchiveSerializer(item_data, many=True)
 
@@ -72,3 +70,10 @@ class APIItemView(APIView):
 
         return Response(serializer.data)
 
+
+class APIItemViewSlug(APIView):
+    def get(self, request, slug):
+        items = Item.objects.filter(slug__icontains=slug)
+        serializer = ItemSerializer(items, many=True)
+
+        return Response(serializer.data)
