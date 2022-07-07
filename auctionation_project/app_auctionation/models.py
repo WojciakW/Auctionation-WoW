@@ -1,5 +1,6 @@
 from django.db import models, connection, transaction
 from django.template.defaultfilters import slugify
+from django.contrib.auth.models import User
 # Create your models here.
 
 
@@ -72,7 +73,7 @@ class Item(models.Model):
     name = models.CharField(
         max_length=256,
         null=True,
-        default=None
+        default=None,
     )
     quality = models.CharField(
         max_length=32,
@@ -92,3 +93,72 @@ class Item(models.Model):
             self.slug = slugify(self.name)
 
         return super().save(*args, **kwargs)
+
+
+class UserItemObserved(models.Model):
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE
+    )
+    item = models.ForeignKey(
+        to=Item,
+        on_delete=models.CASCADE,
+    )
+    realm = models.ForeignKey(
+        to=Realms,
+        on_delete=models.CASCADE
+    )
+    faction = models.CharField(
+        max_length=1,
+        default=None,
+        null=True
+    )
+    faction_name = models.CharField(
+        max_length=16,
+        default=None,
+        null=True
+    )
+
+
+    def save(self, *args, **kwargs):
+        self.item_name = Item.objects.get(id=self.item_id).name
+
+        if self.faction == 'h':
+            self.faction_name = 'Horde'
+        elif self.faction == 'a':
+            self.faction_name = 'Alliance'
+
+        self.realm_name = Realms.objects.get(id=self.realm_id).name
+        self.item_wow_id = Item.objects.get(id=self.item_id).wow_id
+
+        if UserItemObserved.objects.filter(
+            user=self.user_id,
+            item=self.item_id,
+            realm=self.realm_id,
+            faction=self.faction
+        ).exists():
+            return None
+
+        return super().save(*args, **kwargs)
+
+
+class Comment(models.Model):
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE
+    )
+    content = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    item = models.ForeignKey(
+        to=Item,
+        on_delete=models.CASCADE,
+    )
+    realm = models.ForeignKey(
+        to=Realms,
+        on_delete=models.CASCADE
+    )
+    faction = models.CharField(
+        max_length=1,
+        default=None,
+        null=True
+    )
