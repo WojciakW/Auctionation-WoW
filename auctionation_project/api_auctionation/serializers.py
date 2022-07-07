@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from app_auctionation.models import Auction, Item, AuctionItemArchive
+from app_auctionation.models import Auction, Item, AuctionItemArchive, Dates
+
+
+class DateSerializer(serializers.Serializer):
+    value = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
 
 class AuctionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,6 +29,17 @@ class ItemSerializer(serializers.ModelSerializer):
 
 
 class ItemArchiveSerializer(serializers.ModelSerializer):
+    date = DateSerializer()
+
     class Meta:
         model = AuctionItemArchive
-        fields = '__all__'
+        fields = [
+            'auctions_count',
+            'date',
+            'lowest_buyout',
+            'faction',
+            'realm_id',
+            'mean_buyout',
+            'median_buyout',
+            'item_id'
+        ]
