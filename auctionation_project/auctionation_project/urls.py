@@ -15,16 +15,26 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from app_auctionation.views import LandingView, ItemStatsView
-from api_auctionation.views import APIAuctionsView, APIItemStatsView, APIGetIconView, APIItemView
+from app_auctionation.views import (
+    LandingView,
+    ItemStatsView,
+    LoginView,
+    RegisterView,
+    LogoutView,
+    ResetPasswordView,
+    CommentView
+)
+from api_auctionation.views import (
+    APIAuctionsView,
+    APIItemStatsView,
+    APIGetIconView,
+    APIItemView,
+    APIItemViewSlug,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path(
-        '',
-        LandingView.as_view(),
-        name='first'
-    ),
+    # API URLS:
     path(
         'api/auctions/<int:realm>/<str:faction>/<slug:slug>/',
         APIAuctionsView.as_view()
@@ -42,7 +52,36 @@ urlpatterns = [
         APIItemView.as_view()
     ),
     path(
-        '/item/<int:realm>/<str:faction>/<int:item_id>/',
+        'api/item/<slug:slug>/',
+        APIItemViewSlug.as_view()
+    ),
+    # APP URLS:
+    path(
+        'item/<int:realm>/<str:faction>/<int:item_id>/',
         ItemStatsView.as_view()
+    ),
+    path(
+        '',
+        LandingView.as_view(),
+    ),
+    path(
+        'login/',
+        LoginView.as_view()
+    ),
+    path(
+        'register/',
+        RegisterView.as_view()
+    ),
+    path(
+        'logout/',
+        LogoutView.as_view()
+    ),
+    path(
+        'change_password/',
+        ResetPasswordView.as_view()
+    ),
+    path(
+        'comment/<int:realm>/<str:faction>/<int:item_id>/',
+        CommentView.as_view()
     )
 ]
