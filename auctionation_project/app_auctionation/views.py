@@ -26,7 +26,10 @@ class LandingView(View):
     """
     def get(self, request):
         realms = Realms.objects.all()
-        data_time = Dates.objects.all().order_by('-id').first().value
+        try:
+            data_time = Dates.objects.all().order_by('-id').first().value
+        except AttributeError:
+            data_time = None
 
         if request.user.is_authenticated:
             user = request.user
@@ -63,7 +66,10 @@ class ItemStatsView(View):
     def get(self, request, realm, faction, item_id):
         item = Item.objects.get(wow_id=item_id)
         realm = Realms.objects.get(id=realm)
-        data_time = Dates.objects.all().order_by('-id').first().value
+        try:
+            data_time = Dates.objects.all().order_by('-id').first().value
+        except AttributeError:
+            data_time = None
 
         comments = Comment.objects.filter(
             realm=realm,

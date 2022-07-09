@@ -80,7 +80,7 @@ def populate_realms():
 
     response_json = json.loads(response.content)
 
-    for i in range(len(response_json.get('realms')[:])):
+    for i in range(len(response_json.get('realms')[1:5])):
         if response_json.get('realms')[i].get('name')[0:2] == 'EU':  # reject those realms that start with 'EU'
             continue
 
@@ -97,32 +97,32 @@ def populate_realms():
 
 def get_item_data():
     """
-    1. Get WoW API Items data,
+    1. Get WoW API Items data (code below returns only items in id range 1000, 1100),
     2. Write data into 'Item' table.
     """
-    item_all_ids = Auction.objects.values('wow_item_id').distinct()
 
-    for i, item_id in enumerate(item_all_ids):
-        url = API_URLS['items'][0] + str(item_id['wow_item_id']) + API_URLS['items'][1]
-        try:
-            connected = False
+    for i in range(1000, 1100):
+        url = API_URLS['items'][0] + str(i) + API_URLS['items'][1]
 
-            while not connected:
-                response, connection = api_response(
-                    url,
-                    ACCESS_TOKEN
-                )
+        connected = False
 
-                if connection:
-                    connected = True
+        while not connected:
+            response, connection = api_response(
+                url,
+                ACCESS_TOKEN
+            )
 
-            response_json = json.loads(response.content)
+            if connection:
+                connected = True
 
-        except json.decoder.JSONDecodeError as err:
+        if response.status_code != 200:
             continue
 
+        response_json = json.loads(response.content)
+
+        print(i)
         item_data = {
-            'wow_id': item_id['wow_item_id'],
+            'wow_id': response_json.get('id'),
             'name': response_json.get('name'),
             'quality': response_json.get('preview_item').get('quality').get('name')
         }
@@ -355,6 +355,13 @@ class AuctionStatsCalculator:
 # script execution
 # ``````````````````````
 while True:
+    if len(Realms.objects.all()) == 0:
+        print('Database startup...')
+
+        populate_realms()
+        get_item_data()
+        get_current_auctions_data()
+
     print(f'Data management on {datetime.now()}')
 
     connected = True
