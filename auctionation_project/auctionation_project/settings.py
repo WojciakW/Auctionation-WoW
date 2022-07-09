@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 from corsheaders.defaults import default_headers
+from local_credentials import USER, PASSWORD
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -87,8 +88,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'auctionation_test',
         'HOST': '127.0.0.1',
-        'USER': 'postgres',
-        'PASSWORD': 'coderslab'
+        'USER': USER,
+        'PASSWORD': PASSWORD
     }
 }
 
