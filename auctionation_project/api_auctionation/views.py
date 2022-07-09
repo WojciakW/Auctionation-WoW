@@ -81,7 +81,7 @@ class APIItemView(APIView):
     Returns item-specific data, e.g. item quality.
     """
     def get(self, request, wow_id):
-        item = Item.objects.get(wow_id=wow_id)
+        item = Item.objects.filter(wow_id=wow_id).first()
         serializer = ItemSerializer(item)
 
         return Response(serializer.data)
