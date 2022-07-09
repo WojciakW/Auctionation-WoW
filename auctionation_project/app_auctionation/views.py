@@ -1,4 +1,8 @@
+"""
+Auctionation Web APP endpoint views.
+"""
 from django.contrib.auth import authenticate, login, logout
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
@@ -11,12 +15,15 @@ from .models import (
     Comment
 )
 from .forms import UserCreateForm, UserLoginForm, UserResetPasswordForm, CommentForm
-# Create your views here.
 from django.views import View
 from datetime import datetime
 
 
 class LandingView(View):
+    """
+        Landing page:
+            -GET: Display search field, Observed Items list (logged users only).
+    """
     def get(self, request):
         realms = Realms.objects.all()
         data_time = Dates.objects.all().order_by('-id').first().value
@@ -46,6 +53,11 @@ class LandingView(View):
 
 
 class ItemStatsView(View):
+    """
+        View for displaying chosen item stats:
+            -GET: A base to put the graphs on, display users comments
+            -POST: Add/remove specific item to/from Observed Items list (logged users only).
+    """
     now = datetime.now()
 
     def get(self, request, realm, faction, item_id):
@@ -108,42 +120,50 @@ class ItemStatsView(View):
         )
 
     def post(self, request, realm, faction, item_id):
-        item = Item.objects.get(wow_id=item_id)
+        if request.user.is_authenticated:
+            item = Item.objects.get(wow_id=item_id)
 
-        if AuctionItemArchive.objects.filter(
-            realm_id=realm,
-            faction=faction,
-            item_id=item.id
-        ) is None:
-            return Http404
-
-        observed = request.POST.get('observed')
-        print(observed)
-
-        if observed == 'False':
-            UserItemObserved.objects.create(
-                item_id=item.id,
-                user_id=request.user.id,
-                faction=faction,
-                realm_id=realm
-            )
-
-            return redirect(request.path)
-
-        elif observed == 'True':
-            observed_item = get_object_or_404(
-                UserItemObserved,
-                user_id=request.user.id,
+            if AuctionItemArchive.objects.filter(
                 realm_id=realm,
                 faction=faction,
                 item_id=item.id
-            )
-            observed_item.delete()
+            ) is None:
+                return Http404
 
-            return redirect(request.path)
+            observed = request.POST.get('observed')
+
+            if observed == 'False':
+                UserItemObserved.objects.create(
+                    item_id=item.id,
+                    user_id=request.user.id,
+                    faction=faction,
+                    realm_id=realm
+                )
+
+                return redirect(request.path)
+
+            elif observed == 'True':
+                observed_item = get_object_or_404(
+                    UserItemObserved,
+                    user_id=request.user.id,
+                    realm_id=realm,
+                    faction=faction,
+                    item_id=item.id
+                )
+                observed_item.delete()
+
+                return redirect(request.path)
+
+        else:
+            raise PermissionDenied()
 
 
 class LoginView(View):
+    """
+        Simple login view:
+            -GET: Display login form.
+            -POST: Validate data, make an attempt to log in.
+    """
     def get(self, request):
         return render(
             request,
@@ -186,6 +206,9 @@ class LoginView(View):
 
 
 class LogoutView(View):
+    """
+        Logout view. Displays nothing, only logs user out.
+    """
     def get(self, request):
         logout(request)
         previous_page = request.GET.get('next')
@@ -193,6 +216,11 @@ class LogoutView(View):
 
 
 class RegisterView(View):
+    """
+        Simple register view:
+            -GET: Display register form consisting of username, one-time repeated password, email
+            -POST: Validate given data, create new user
+    """
     def get(self, request):
         form = UserCreateForm()
         return render(
@@ -228,6 +256,11 @@ class RegisterView(View):
 
 
 class ResetPasswordView(View):
+    """
+        Change password view:
+            -GET: Display form consisting of username, current password, one-time repeated new password
+            -POST: Validate data, save to user database
+    """
     def get(self, request):
         form = UserResetPasswordForm()
 
@@ -265,20 +298,28 @@ class ResetPasswordView(View):
 
 
 class CommentView(View):
+    """
+        View for adding comment to database (logged users only):
+            -POST: Add new user comment on item
+    """
     def post(self, request, realm, faction, item_id):
-        form = CommentForm(request.POST)
+        if request.user.is_authenticated:
+            form = CommentForm(request.POST)
 
-        if form.is_valid():
-            item = get_object_or_404(Item, wow_id=item_id)
-            user = request.user
+            if form.is_valid():
+                item = get_object_or_404(Item, wow_id=item_id)
+                user = request.user
 
-            Comment.objects.create(
-                user=user,
-                content=request.POST.get('content'),
-                faction=faction,
-                item_id=item.id,
-                realm_id=realm
-            )
+                Comment.objects.create(
+                    user=user,
+                    content=request.POST.get('content'),
+                    faction=faction,
+                    item_id=item.id,
+                    realm_id=realm
+                )
 
-        previous_page = request.GET.get('next')
-        return redirect(previous_page)
+            previous_page = request.GET.get('next')
+            return redirect(previous_page)
+
+        else:
+            raise PermissionDenied()

@@ -1,3 +1,7 @@
+"""
+Auctionation auto-generated forms.
+"""
+
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -8,6 +12,9 @@ from .models import Comment
 
 
 class UserCreateForm(forms.Form):
+    """
+    User register form.
+    """
     username = forms.CharField(
         widget=forms.TextInput(
             attrs={
@@ -40,6 +47,9 @@ class UserCreateForm(forms.Form):
     )
 
     def clean(self):
+        """
+        Method overridden for data validation purpose.
+        """
         cleaned_data = super().clean()
 
         password = cleaned_data.get('password')
@@ -59,6 +69,9 @@ class UserCreateForm(forms.Form):
 
 
 class UserLoginForm(forms.Form):
+    """
+    Login form.
+    """
     username = forms.CharField(
         widget=forms.TextInput(
             attrs={
@@ -76,6 +89,9 @@ class UserLoginForm(forms.Form):
 
 
 class UserResetPasswordForm(forms.Form):
+    """
+    Change password form.
+    """
     username = forms.CharField(
         widget=forms.TextInput(
             attrs={
@@ -109,6 +125,9 @@ class UserResetPasswordForm(forms.Form):
     )
 
     def clean(self):
+        """
+        Method overridden for data validation purpose.
+        """
         cleaned_data = super().clean()
 
         username = cleaned_data.get('username')
@@ -139,6 +158,9 @@ class UserResetPasswordForm(forms.Form):
 
 
 class CommentForm(forms.ModelForm):
+    """
+    Add comment form.
+    """
     class Meta:
         model = Comment
         fields = [

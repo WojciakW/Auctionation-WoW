@@ -1,14 +1,23 @@
+"""
+Auctionation models.
+"""
+
 from django.db import models, connection, transaction
 from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User
-# Create your models here.
 
 
 class Dates(models.Model):
+    """
+    Table for WoWAPI request time data.
+    """
     value = models.DateTimeField(auto_now_add=True)
 
 
 class Auction(models.Model):
+    """
+    Table for live auctions data.
+    """
     realm = models.ForeignKey(
         to='Realms',
         on_delete=models.CASCADE,
@@ -36,6 +45,9 @@ class Auction(models.Model):
 
 
 class AuctionItemArchive(models.Model):
+    """
+    Table for archived statistics data.
+    """
     item = models.ForeignKey(
         to='Item',
         on_delete=models.CASCADE
@@ -63,12 +75,18 @@ class AuctionItemArchive(models.Model):
 
 
 class Realms(models.Model):
+    """
+    Table for WoWAPI realm data.
+    """
     locale = models.CharField(max_length=8)
     api_id = models.IntegerField()
     name = models.CharField(max_length=64)
 
 
 class Item(models.Model):
+    """
+    Table for item-specific data.
+    """
     wow_id = models.IntegerField()
     name = models.CharField(
         max_length=256,
@@ -96,6 +114,9 @@ class Item(models.Model):
 
 
 class UserItemObserved(models.Model):
+    """
+    Table for user-observeditem relations.
+    """
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE
@@ -143,6 +164,9 @@ class UserItemObserved(models.Model):
 
 
 class Comment(models.Model):
+    """
+    Table for user comments.
+    """
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE

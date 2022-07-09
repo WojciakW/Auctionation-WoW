@@ -1,3 +1,29 @@
+"""
+Auctionation data management script.
+
+In 1-hour cycle:
+    - mark current auctions present in the 'Auctions' table as "to be archived",
+    - fetch live auctions data from WoWAPI,
+    - save fetched data into the 'Auctions' table and "mark it" as "to read" for AuctionationAPI,
+    - calculate all statistics of entries present in 'Auctions' marked by "to be archived",
+    - save those statistics into 'AuctionItemArchive' table,
+    - delete all entries marked by "to be archived" from 'Auctions'
+
+Run in django shell using terminal command:
+    ./manage.py shell << data_manage.py
+
+!!! Warning:
+        script requires proper database setup, that is:
+            - database creation,
+            - correct django migrations,
+            - populated 'Realms' table (can be done using 'populate_realms()' func below)
+            - populated 'Items' table (can be done using 'get_item_data()' func below)
+
+
+Once correctly run, it won't stop unless killed (ctrl+c) or got an unforeseen error.
+
+"""
+
 from blizz_api_connection import api_response, get_api_token
 import json
 from app_auctionation.models import (
@@ -35,17 +61,27 @@ ACCESS_TOKEN = get_api_token()
 # functions
 # ``````````````````````
 def populate_realms():
-    response = api_response(
-        API_URLS['realms'],
-        ACCESS_TOKEN
-    )
-    print(response)
+    """
+    1. Get WoW API Realms data (code below only for EU realms),
+    2. Write data into 'Realms' table.
+    """
+    connected = False
+
+    while not connected:
+        response, connection = api_response(
+            API_URLS['realms'],
+            ACCESS_TOKEN
+        )
+
+        if connection:
+            connected = True
+
     realms_data_list = []
 
     response_json = json.loads(response.content)
 
     for i in range(len(response_json.get('realms')[:])):
-        if response_json.get('realms')[i].get('name')[0:2] == 'EU':
+        if response_json.get('realms')[i].get('name')[0:2] == 'EU':  # reject those realms that start with 'EU'
             continue
 
         realm_data = {
@@ -55,27 +91,34 @@ def populate_realms():
         }
 
         realms_data_list.append(Realms(**realm_data))
-        print(i)
 
     Realms.objects.bulk_create(realms_data_list)
 
 
 def get_item_data():
+    """
+    1. Get WoW API Items data,
+    2. Write data into 'Item' table.
+    """
     item_all_ids = Auction.objects.values('wow_item_id').distinct()
 
     for i, item_id in enumerate(item_all_ids):
         url = API_URLS['items'][0] + str(item_id['wow_item_id']) + API_URLS['items'][1]
         try:
-            response = api_response(
-                url,
-                ACCESS_TOKEN
-            )
-            print(i, response)
+            connected = False
+
+            while not connected:
+                response, connection = api_response(
+                    url,
+                    ACCESS_TOKEN
+                )
+
+                if connection:
+                    connected = True
 
             response_json = json.loads(response.content)
 
         except json.decoder.JSONDecodeError as err:
-            print(err)
             continue
 
         item_data = {
@@ -88,6 +131,15 @@ def get_item_data():
 
 
 def get_current_auctions_data():
+    """
+    In loop:
+        - fetch live auctions data from WoW API for every realm present in Realms table and
+          each of two faction sides (neutral auction house omitted),
+        - write all the data into 'Auctions' table
+
+    Note: from my experience, Blizzard API requests can return odd responses sometimes.
+
+    """
     print('Fetching live auctions data...')
 
     api_request_time = Dates.objects.create()
@@ -150,7 +202,10 @@ def get_current_auctions_data():
             print(f"Data from {realm.name, key} fetched and saved in {round(end - start, 2)} s.")
 
 
-def change_archive_flag(value):
+def change_archive_flag(value: bool):
+    """
+    Switches 'to_archive' flag for all entries in the 'Auctions' table, target value specified as param.
+    """
     print('Changing archive flags...')
 
     auctions = Auction.objects.all()
@@ -165,6 +220,11 @@ def change_archive_flag(value):
 
 
 def archive_data():
+    """
+    Archives the data using 'AuctionStatsCalculator' class:
+        - calculates appropriate statistics for all the valid entries,
+        - creates new objects in the 'AuctionItemArchive' table based on calculated data
+    """
     print('Archiving data...')
 
     for realm in Realms.objects.all():
@@ -198,6 +258,9 @@ def archive_data():
 
 
 def delete_from_current_auctions():
+    """
+    Deletes all the entries from the 'Auctions' table marked as 'to_archive'.
+    """
     print('Deleting current auction entries...')
 
     for auction in Auction.objects.filter(to_archive=True):
@@ -210,6 +273,10 @@ def delete_from_current_auctions():
 # classes
 # ``````````````````````
 class AuctionStatsCalculator:
+    """
+    Calculator-style class used for auction statistics calculations.
+
+    """
     def __init__(self, item, realm, faction):
         self.realm = realm
         self.faction = faction
@@ -228,39 +295,59 @@ class AuctionStatsCalculator:
         return f"item_id: {self.item}"
 
     def load_objects(self):
+        """
+        Returns all the valid auction entries.
+        """
         return self.Model.objects.all().filter(
-            wow_item_id=self.item
-        ).filter(
-            realm=self.realm
-        ).filter(
+            wow_item_id=self.item,
+            realm=self.realm,
             faction=self.faction
         )
 
     def set_flag(self):
+        """
+        Sets the 'is_only_one' attr.
+        Required by 'statistics' python module.
+        """
         if self.auctions_count == 1:
             return True
         else:
             return False
 
     def get_unit_buyout_list(self):
+        """
+        Calculates price per unit for all the entries.
+        """
         return [obj.buyout / obj.quantity for obj in self.loaded_objects]
 
     def get_mean(self):
+        """
+        Calculates mean buyout.
+        """
         if self.is_only_one:
             return self.buyout_list[0]
 
         return st_mean(self.buyout_list)
 
     def get_median(self):
+        """
+        Calculates median buyout.
+        """
         if self.is_only_one:
             return self.buyout_list[0]
 
         return median(self.buyout_list)
 
     def get_auction_count(self):
+        """
+        Calculates item auctions count.
+        """
         return self.loaded_objects.count()
 
     def get_lowest_buyout(self):
+        """
+        Returns the lowest buyout.
+        """
         return self.loaded_objects.order_by('buyout').first().buyout
 
 

@@ -1,3 +1,8 @@
+"""
+Auctionation API.
+
+An API build for JavaScript fetch() purposes.
+"""
 from django.http import HttpResponse
 from django.views import View
 
@@ -11,7 +16,7 @@ from app_auctionation.models import (
     Dates
 )
 
-from rest_framework.generics import ListCreateAPIView, ListAPIView
+from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -21,6 +26,9 @@ file_dir = os.path.dirname(__file__)
 
 
 class APIAuctionsView(ListAPIView):
+    """
+    Returns live auctions data from chosen realm and faction based on search query.
+    """
     serializer_class = AuctionSerializer
     queryset = Auction.objects.all()
 
@@ -39,6 +47,9 @@ class APIAuctionsView(ListAPIView):
 
 
 class APIItemStatsView(APIView):
+    """
+    Returns all archived item statistics data for chosen realm and faction.
+    """
     def get(self, request, faction, realm, item_id):
 
         item_data = AuctionItemArchive.objects.filter(
@@ -47,13 +58,15 @@ class APIItemStatsView(APIView):
             realm_id=realm
         )
 
-        print('asd')
         serializer = ItemArchiveSerializer(item_data, many=True)
 
         return Response(serializer.data)
 
 
 class APIGetIconView(View):
+    """
+    Returns item icon as 56x56 .jpeg file.
+    """
     def get(self, request, item_id):
         path = f'icons/{item_id}'
 
@@ -64,6 +77,9 @@ class APIGetIconView(View):
 
 
 class APIItemView(APIView):
+    """
+    Returns item-specific data, e.g. item quality.
+    """
     def get(self, request, wow_id):
         item = Item.objects.get(wow_id=wow_id)
         serializer = ItemSerializer(item)
@@ -72,6 +88,9 @@ class APIItemView(APIView):
 
 
 class APIItemViewSlug(APIView):
+    """
+    Returns all items by given query.
+    """
     def get(self, request, slug):
         items = Item.objects.filter(slug__icontains=slug)
         serializer = ItemSerializer(items, many=True)

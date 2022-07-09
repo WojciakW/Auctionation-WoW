@@ -1,3 +1,7 @@
+"""
+Auctionation serializers for proper JSON API responses.
+"""
+
 from rest_framework import serializers
 from app_auctionation.models import Auction, Item, AuctionItemArchive, Dates
 
