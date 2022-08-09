@@ -1,5 +1,5 @@
 # Auctionation-WoW
-## A Python-Django web app for World of Warcraft Classic live auction house statistics.
+## A Python-Django social web app for World of Warcraft Classic live auction house statistics.
 
 Author: Wojciech Wójciak (wojciech.wojciak22@gmail.com)
 
@@ -26,6 +26,7 @@ All data is provided by Blizzard's WoW Classic API.
 
 ### Technologies used:
 - Django 4.0,
+- Django REST Framework (API),
 - PostgreSQL database,
 - Bootstrap,
 - Vanilla JS (API fetching),
