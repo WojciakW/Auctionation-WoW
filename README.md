@@ -38,3 +38,7 @@ All data is provided by Blizzard's WoW Classic API.
 ![3](https://raw.githubusercontent.com/WojciakW/Auctionation/master/readme_res/3.png)
 ![4](https://raw.githubusercontent.com/WojciakW/Auctionation/master/readme_res/4.png)
 ![5](https://raw.githubusercontent.com/WojciakW/Auctionation/master/readme_res/5.png)
+
+#### Todos:
+- Split back-end/front-end (FastAPI + front-end framework? switch SSR to SPA rendering?),
+- Rewrite and opmtimize database handling engine (daemon? multithreading?),
