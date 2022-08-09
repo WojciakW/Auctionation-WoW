@@ -1,6 +1,5 @@
 # Auctionation-WoW
-
-A Python-Django web app for World of Warcraft Classic live auction house statistics.
+## A Python-Django web app for World of Warcraft Classic live auction house statistics.
 
 Author: Wojciech Wójciak (wojciech.wojciak22@gmail.com)
 
